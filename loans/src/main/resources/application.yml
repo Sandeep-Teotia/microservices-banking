@@ -3,6 +3,10 @@ server:
 spring:
     application:
             name: loans
+    config:
+        import:
+            - "application_prod.yml"
+            - "application_qa.yml"
     jpa:
         hibernate:
             ddl-auto: update

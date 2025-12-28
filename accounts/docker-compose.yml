@@ -1,0 +1,39 @@
+services:
+  accounts:
+    image: "sandeepteotia/accounts:1.0"
+    container_name: accounts-ms
+    ports:
+      - "8080:8080"
+    networks:
+      - "microservices-net"
+    deploy:
+      resources:
+        limits:
+          memory: "250M"
+  cards:
+    image: "sandeepteotia/cards:1.0"
+    container_name: cards-ms
+    ports:
+      - "9000:9000"
+    networks:
+      - "microservices-net"
+    deploy:
+      resources:
+        limits:
+          memory: "250M"
+  loans:
+    image: "sandeepteotia/loans:1.0"
+    container_name: loans-ms
+    ports:
+      - "8090:8090"
+    networks:
+      - "microservices-net"
+    deploy:
+      resources:
+        limits:
+          memory: "250M"
+networks:
+  microservices-net:
+    driver: bridge        
+
+    
