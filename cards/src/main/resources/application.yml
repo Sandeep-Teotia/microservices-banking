@@ -3,6 +3,12 @@ server:
 spring:
     application:
         name: cards
+    config:
+        import:
+            - "optional:configserver:http://localhost:8071/config"
+    profiles:
+        active:
+            - qa            
     jpa:
         hibernate:
             ddl-auto: update

@@ -7,6 +7,10 @@ spring:
         import:
             - "application_prod.yml"
             - "application_qa.yml"
+            - "optional:configserver:http://localhost:8071/config"
+    profiles:
+        active:
+            - qa
     jpa:
         hibernate:
             ddl-auto: update

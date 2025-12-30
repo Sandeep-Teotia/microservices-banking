@@ -11,6 +11,11 @@ jobs:
     name: Build and Test All Services
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    
     strategy:
       matrix:
         service: [accounts, cards, loans, configserver]
