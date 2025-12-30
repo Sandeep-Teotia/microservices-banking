@@ -18,3 +18,5 @@ spring:
         driverClassName: org.h2.Driver
         username: sa
         password: ""
+build:
+    version: 1.0.0
