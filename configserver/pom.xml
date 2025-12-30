@@ -76,6 +76,19 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<groupId>com.google.cloud.tools</groupId>
+				<artifactId>jib-maven-plugin</artifactId>
+				<version>0.9.0</version>
+				<configuration>
+					<from>
+						<image>openjdk:17-jdk-slim</image>
+					</from>
+					<to>
+						<image>sandeepteotia/${project.artifactId}:${project.version}</image>
+					</to>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
