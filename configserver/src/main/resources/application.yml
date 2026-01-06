@@ -4,13 +4,23 @@ spring:
     application:
         name: configserver
     profiles:
-        active: native    
+      #  active: native    
+      active: git
     cloud:
         config:
             server:
-                native:
-                    search-locations: classpath:/config   
+                git:
+                    uri: https://github.com/Sandeep-Teotia/microservices-banking.git
+                    search-paths:
+                        - configserver/src/main/resources/config
+              #  native:
+               #     search-locations: classpath:/config   
                 # Add prefix to Config Server endpoints to avoid conflicts with Swagger
-                prefix: /config     
+                prefix: /config    
+management:
+    endpoints:
+        web:
+            exposure:
+                include: "refresh"                 
 encrypt:
     key: 45D81EC1EF61DF9AD8D3E5BB397F9

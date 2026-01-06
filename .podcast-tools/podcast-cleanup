@@ -1,0 +1,110 @@
+#!/root/.local/share/uv/tools/notebooklm-mcp-server/bin/python
+"""
+podcast-cleanup: Deletes NotebookLM notebooks for completed tasks to reduce clutter.
+Usage: podcast-cleanup
+"""
+import sys
+import re
+from pathlib import Path
+
+sys.path.append("/root/.local/share/uv/tools/notebooklm-mcp-server/lib/python3.11/site-packages")
+
+# Central tracking file location
+TASKS_FILE = Path("/home/microservices/Notes/java-8,9/Podcast-Automation/podcast-tasks.md")
+
+try:
+    from notebooklm_mcp.server import get_client
+except ImportError:
+    print("Error: Could not import notebooklm_mcp library.")
+    sys.exit(1)
+
+def main():
+    if not TASKS_FILE.exists():
+        print("No tasks file found.")
+        sys.exit(0)
+
+    print("--- Podcast Cleanup ---")
+    print("Scanning for 'completed' tasks to remove from NotebookLM...")
+
+    content = TASKS_FILE.read_text()
+    lines = content.split('\n')
+    
+    # Regex to capture row data, including Notebook ID (column 7) and Title (col 2)
+    # Row format: | status | title | source | output | url | download | notebook_id | created |
+    # Note: Regex needs to be robust to handle the separators
+    
+    updated_lines = []
+    ids_to_delete = []
+    
+    # Simple split based parsing is safer for markdown tables if pipes are reliable
+    for line in lines:
+        if not line.strip().startswith('|'):
+            updated_lines.append(line)
+            continue
+            
+        parts = [p.strip() for p in line.split('|')]
+        # Parts[0] is empty (before first pipe), Parts[1] is status, Parts[7] is ID
+        
+        if len(parts) >= 8:
+            status = parts[1].lower()
+            title = parts[2]
+            notebook_id = parts[7] 
+            
+            # If status is completed and looks like a valid ID (not empty/header)
+            if status == 'completed' and len(notebook_id) > 5 and '-' in notebook_id:
+                print(f"Found completed task: {title} (ID: {notebook_id})")
+                ids_to_delete.append((notebook_id, title, line))
+            else:
+                updated_lines.append(line)
+        else:
+            updated_lines.append(line)
+            
+    if not ids_to_delete:
+        print("No completed tasks found to clean up.")
+        return
+
+    print(f"\nFound {len(ids_to_delete)} notebooks to delete.")
+    confirm = input("Delete these notebooks from NotebookLM? (y/n): ")
+    if confirm.lower() != 'y':
+        print("Aborted.")
+        return
+
+    print("\nAuthenticating...")
+    try:
+        client = get_client()
+    except Exception as e:
+        print(f"Auth failed: {e}")
+        sys.exit(1)
+
+    # Perform Deletion
+    final_lines_map = {orig: orig for _, _, orig in ids_to_delete}
+    
+    for nid, title, original_line in ids_to_delete:
+        print(f"Deleting '{title}' ({nid})... ", end="")
+        try:
+            client.delete_notebook(nid)
+            print("DONE")
+            # Mark as deleted in the file
+            final_lines_map[original_line] = original_line.replace('| completed |', '| deleted |')
+        except Exception as e:
+            print(f"FAILED: {e}")
+            if "NOT_FOUND" in str(e):
+                 print("(Notebook already gone, marking deleted)")
+                 final_lines_map[original_line] = original_line.replace('| completed |', '| deleted |')
+    
+    # Reconstruct file
+    output_lines = []
+    for line in lines:
+        if line in final_lines_map:
+            output_lines.append(final_lines_map[line])
+        elif line not in [x[2] for x in ids_to_delete]: # Only if not in our process list (handled above)
+             output_lines.append(line)
+        else: 
+            # Should not happen given logic above
+            output_lines.append(line)
+
+    TASKS_FILE.write_text('\n'.join(output_lines))
+    print("\nCleanup complete. Tasks table updated.")
+
+if __name__ == "__main__":
+    main()

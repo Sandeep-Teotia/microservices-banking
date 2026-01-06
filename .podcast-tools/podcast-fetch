@@ -1,0 +1,230 @@
+#!/root/.local/share/uv/tools/notebooklm-mcp-server/bin/python
+"""
+podcast-fetch: Fetch audio URL from an existing NotebookLM notebook and add to tracking table.
+Usage: podcast-fetch "Notebook Title" --source "/path/to/original/note.md"
+"""
+import sys
+import re
+import argparse
+import datetime
+from pathlib import Path
+
+sys.path.append("/root/.local/share/uv/tools/notebooklm-mcp-server/lib/python3.11/site-packages")
+
+# Central tracking file location
+TASKS_FILE = Path("/home/microservices/Notes/java-8,9/Podcast-Automation/podcast-tasks.md")
+
+try:
+    from notebooklm_mcp.server import get_client
+except ImportError:
+    print("Error: Could not import notebooklm_mcp library.")
+    sys.exit(1)
+
+def init_tasks_file():
+    """Create the tasks file with header if it doesn't exist."""
+    if not TASKS_FILE.exists():
+        header = """# Podcast Download Tasks
+
+Track podcast generation and download status.
+
+| Status | Title | Source File | Output File | Notebook URL | Download Links | Notebook ID | Created |
+|--------|-------|-------------|-------------|--------------|----------------|-------------|---------|
+"""
+        TASKS_FILE.write_text(header)
+
+def add_task_to_table(title: str, source_file: str, output_file: str, notebook_url: str, found_urls: list, notebook_id: str):
+    """Add a new pending task row to the markdown table."""
+    init_tasks_file()
+    
+    created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    # Build multiple download links
+    # Format: [Audio](url) [Video](url) ...
+    download_links_parts = []
+    for label, url in found_urls:
+        download_links_parts.append(f"[{label}]({url}?authuser=0)")
+    
+    download_str = "<br>".join(download_links_parts)
+    
+    # Create new row
+    new_row = f"| pending | {title} | {source_file} | {output_file} | [{title}]({notebook_url}) | {download_str} | {notebook_id} | {created} |\n"
+    
+    # Read existing content
+    content = TASKS_FILE.read_text()
+    
+    # Check if this title already exists
+    if f"| {title} |" in content or f"| pending | {title} |" in content:
+        # Update existing row status to pending with new URL
+        lines = content.split('\n')
+        updated_lines = []
+        for line in lines:
+            if f"| {title} |" in line:
+                # Replace with new row
+                updated_lines.append(new_row.rstrip())
+            else:
+                updated_lines.append(line)
+        content = '\n'.join(updated_lines)
+        TASKS_FILE.write_text(content)
+        print(f"Updated existing entry for: {title}")
+    else:
+        # Append new row
+        if "| Notebook URL | Audio URL |" in content:
+            # Need to migrate header if old format exists - simple lazy fix is just to append new row
+            # ideally we would rewrite header but appending works for markdown rendering usually
+            pass
+            
+        with open(TASKS_FILE, 'a') as f:
+            f.write(new_row)
+        print(f"Added new entry: {title}")
+
+def main():
+    parser = argparse.ArgumentParser(description="Fetch audio from an existing NotebookLM notebook.")
+    parser.add_argument("notebook_title", help="Title of the notebook to fetch audio from")
+    parser.add_argument("--source", required=True, help="Path to the original markdown file")
+    
+    args = parser.parse_args()
+    
+    source_path = Path(args.source).resolve()
+    notebook_title = args.notebook_title
+
+    print(f"--- NotebookLM Podcast Fetch ---")
+    print(f"Looking for notebook: {notebook_title}")
+
+    print("\nAuthenticating...")
+    try:
+        client = get_client()
+    except Exception as e:
+        print(f"Auth failed: {e}")
+        sys.exit(1)
+
+    # Find the notebook
+    print("Searching notebooks...")
+    try:
+        notebooks = client.list_notebooks()
+        target_nb = None
+        for nb in notebooks:
+            if nb.title == notebook_title:
+                target_nb = nb
+                break
+        
+        if not target_nb:
+            print(f"Error: Notebook '{notebook_title}' not found.")
+            print("Available notebooks:")
+            for nb in notebooks[:10]:
+                print(f"  - {nb.title}")
+            sys.exit(1)
+            
+        print(f"Found: {target_nb.id}")
+    except Exception as e:
+        print(f"Failed to list notebooks: {e}")
+        sys.exit(1)
+
+    # Check for artifacts (Audio, Video, etc)
+    print("Checking for generated artifacts...")
+    try:
+        status_list = client.poll_studio_status(target_nb.id)
+        
+        found_urls = []
+        
+        for artifact in status_list:
+            # Check Audio
+            if artifact.get('audio_url'):
+                found_urls.append(("Audio", artifact['audio_url']))
+            
+            # Check Video
+            if artifact.get('video_url'):
+                found_urls.append(("Video", artifact['video_url']))
+                
+            # Check Infographic (Image)
+            if artifact.get('infographic_url'):
+                found_urls.append(("Infographic", artifact['infographic_url']))
+
+            # Check Slide Deck
+            if artifact.get('slide_deck_url'):
+                found_urls.append(("Slides", artifact['slide_deck_url']))
+
+        if not found_urls:
+            print("No artifacts (audio/video) ready yet. Please wait.")
+            print(f"Check status at: {target_nb.url}")
+            sys.exit(1)
+            
+        print(f"Found {len(found_urls)} artifacts: {', '.join([t for t, _ in found_urls])}")
+        
+    except Exception as e:
+        print(f"Failed to check status: {e}")
+        sys.exit(1)
+
+    # Determine output path
+    podcast_dir = source_path.parent / "Podcast"
+    podcast_dir.mkdir(parents=True, exist_ok=True)
+    
+    # We still base the filename on the title, mainly for Audio. 
+    # Extra artifacts might need manual naming if downloaded manually via browser, 
+    # or the PS script needs update to handle multiple.
+    output_file_name = f"{notebook_title}.wav"
+    output_file = podcast_dir / output_file_name
+    
+    # Add to tracking table
+    add_task_to_table(
+        title=notebook_title,
+        source_file=str(source_path),
+        output_file=str(output_file),
+        notebook_url=target_nb.url,
+        found_urls=found_urls,
+        notebook_id=target_nb.id
+    )
+    
+    print(f"\n=== TASK ADDED TO TRACKING TABLE ===")
+    print(f"Tasks file: {TASKS_FILE}")
+    print(f"Output: {output_file}")
+    print(f"\nOpen the tasks file on Windows to see download links,")
+    print(f"or manually download from: {target_nb.url}")
+    
+    # Update source markdown with predictive embeds
+    print(f"\nUpdating note with {len(found_urls)} artifact embeds...")
+    
+    embed_block = "\n\n### 🧠 NotebookLM Artifacts\n"
+    
+    # Map artifact types to standard suffixes and extensions
+    # User must save files with these exact names for Obsidian links to work
+    type_map = {
+        "Audio": (".wav", ""), # No suffix for main audio
+        "Video": (".mp4", "_Video"),
+        "Infographic": (".png", "_Infographic"),
+        "Slides": (".pdf", "_Slides")
+    }
+    
+    new_embeds = []
+    
+    for label, _ in found_urls:
+        if label in type_map:
+            ext, suffix = type_map[label]
+            filename = f"{notebook_title}{suffix}{ext}"
+            embed_link = f"![[Podcast/{filename}]]"
+            
+            # Label for the section
+            section_label = f"**{label}**"
+            new_embeds.append(f"{section_label}\n{embed_link}")
+    
+    embed_string = embed_block + "\n\n".join(new_embeds) + "\n"
+    
+    try:
+        if source_path.exists():
+            content = source_path.read_text(encoding='utf-8')
+            
+            # Simple check to avoid creating duplicate blocks
+            if "### 🧠 NotebookLM Artifacts" not in content:
+                print(f"Appending new artifacts block to {source_path.name}...")
+                with open(source_path, "a", encoding='utf-8') as f:
+                    f.write(embed_string)
+                print("Note updated!")
+            else:
+                # If block exists, we might normally want to update it, 
+                # but for simplicity we assume the user manages it after creation.
+                print("Artifact block already exists in note. Skipping append.")
+                
+    except Exception as e:
+        print(f"Failed to update note: {e}")
+
+if __name__ == "__main__":
+    main()
