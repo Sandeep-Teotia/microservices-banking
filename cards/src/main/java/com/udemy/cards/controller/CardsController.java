@@ -2,6 +2,7 @@ package com.udemy.cards.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +19,7 @@ import com.udemy.cards.service.ICardsService;
 
 @RestController
 @RequestMapping("/cards")
+@RefreshScope
 public class CardsController {
 
     @Autowired

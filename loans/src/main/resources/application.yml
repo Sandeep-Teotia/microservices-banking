@@ -7,7 +7,7 @@ spring:
         import:
             - "application_prod.yml"
             - "application_qa.yml"
-            - "optional:configserver:http://localhost:8071/config"
+            - "configserver:http://localhost:8071/config"
     profiles:
         active:
             - qa
@@ -20,3 +20,8 @@ spring:
         driverClassName: org.h2.Driver
         username: sa
         password: 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh, busrefresh
