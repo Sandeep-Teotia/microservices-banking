@@ -7,7 +7,7 @@ spring:
         import:
             - "application_prod.yml"
             - "application_qa.yml"
-            - "configserver:http://localhost:8071/config"
+            - "optional:configserver:http://localhost:8071/config"
     profiles:
         active:
             - qa

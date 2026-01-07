@@ -5,7 +5,7 @@ spring:
         name: cards
     config:
         import:
-            - "configserver:http://localhost:8071/config"
+            - "optional:configserver:http://localhost:8071/config"
     profiles:
         active:
             - qa            

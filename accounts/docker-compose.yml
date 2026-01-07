@@ -6,6 +6,8 @@ services:
       - "8080:8080"
     networks:
       - "microservices-net"
+    environment:
+      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/config"
     deploy:
       resources:
         limits:
@@ -20,6 +22,8 @@ services:
       - "9000:9000"
     networks:
       - "microservices-net"
+    environment:
+      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/config"
     deploy:
       resources:
         limits:
@@ -34,6 +38,8 @@ services:
       - "8090:8090"
     networks:
       - "microservices-net"
+    environment:
+      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/config"
     deploy:
       resources:
         limits:
