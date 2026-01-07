@@ -47,11 +47,11 @@ services:
     ports:
       - "8071"
     healthcheck:
-      test: "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"
+      test: "wget -qO- http://localhost:8071/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
       timeout: 10s
-      retries: 3
-      start_period: 10s  
+      retries: 5
+      start_period: 30s  
     networks:
       - "microservices-net"
     deploy:
