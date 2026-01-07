@@ -1,4 +1,9 @@
+# Test configuration - overrides main application.yml during tests
+server:
+  port: 9000
 spring:
+  application:
+    name: cards
   config:
     import: "optional:configserver:http://localhost:8071/config"
   cloud:
@@ -7,3 +12,22 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ""
+
+# Properties expected by application code
+build:
+  version: "test"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh, busrefresh
