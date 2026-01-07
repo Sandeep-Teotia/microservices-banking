@@ -1,0 +1,9 @@
+spring:
+  config:
+    import: "optional:configserver:http://localhost:8071/config"
+  cloud:
+    bus:
+      enabled: false
+  rabbitmq:
+    host: localhost
+    port: 5672
