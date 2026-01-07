@@ -1,5 +1,5 @@
 build:
-  version: "123.0"
+  version: "124.0"
 
 cards:
   message: "Welcome to EazyBank cards related QA APIs "
