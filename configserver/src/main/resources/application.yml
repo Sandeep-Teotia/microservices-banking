@@ -18,9 +18,19 @@ spring:
                 # Add prefix to Config Server endpoints to avoid conflicts with Swagger
                 prefix: /config    
 management:
+    health:
+        livenessstate:
+            enabled: true
+        readinessstate:
+            enabled: true
+    endpoint:
+        health:
+            probes:
+                enabled: true
     endpoints:
         web:
             exposure:
-                include: "refresh"                 
+                include: "refresh" 
+    
 encrypt:
     key: 45D81EC1EF61DF9AD8D3E5BB397F9

@@ -10,6 +10,9 @@ services:
       resources:
         limits:
           memory: "250M"
+    depends_on:
+      configserver:
+        condition: service_healthy
   cards:
     image: "sandeepteotia/cards:1.0"
     container_name: cards-ms
@@ -21,11 +24,34 @@ services:
       resources:
         limits:
           memory: "250M"
+    depends_on:
+      configserver:
+        condition: service_healthy
   loans:
     image: "sandeepteotia/loans:1.0"
     container_name: loans-ms
     ports:
       - "8090:8090"
+    networks:
+      - "microservices-net"
+    deploy:
+      resources:
+        limits:
+          memory: "250M"
+    depends_on:
+      configserver:
+        condition: service_healthy
+  configserver:
+    image: "sandeepteotia/configserver:0.0.1-SNAPSHOT"
+    container_name: configserver
+    ports:
+      - "8071"
+    healthcheck:
+      test: "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 10s  
     networks:
       - "microservices-net"
     deploy:
