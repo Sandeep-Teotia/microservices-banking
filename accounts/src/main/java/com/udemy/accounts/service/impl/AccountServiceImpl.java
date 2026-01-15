@@ -7,12 +7,14 @@ import java.util.Random;
 import org.springframework.stereotype.Service;
 
 import com.udemy.accounts.constants.AccountsConstant;
+import com.udemy.accounts.dto.AccountDetailsDto;
 import com.udemy.accounts.dto.AccountsDto;
 import com.udemy.accounts.dto.CustomerDto;
 import com.udemy.accounts.entity.Accounts;
 import com.udemy.accounts.entity.Customer;
 import com.udemy.accounts.exception.CustomerAlreadyExistsException;
 import com.udemy.accounts.exception.ResourceNotFoundException;
+import com.udemy.accounts.feign.CardsFeignClient;
 import com.udemy.accounts.mapper.AccountsMapper;
 import com.udemy.accounts.mapper.CustomerMapper;
 import com.udemy.accounts.repository.AccountsRepository;
@@ -27,6 +29,7 @@ public class AccountServiceImpl implements IAccountService {
 
     private AccountsRepository accountsRepository;
     private CustomerRepository customerRepository;
+    private CardsFeignClient cardsFeignClient;
 
     @Override
     @SuppressWarnings("null")
@@ -93,6 +96,23 @@ public class AccountServiceImpl implements IAccountService {
         customerRepository.deleteById(Objects.requireNonNull(customer.getCustomerId()));
         accountsRepository.deleteByCustomerId(Objects.requireNonNull(customer.getCustomerId()));
         return true;
+    }
+
+    @Override
+    public AccountDetailsDto fetchAccountDetails(String mobileNumber) {
+        Customer customer = customerRepository.findByMobileNumber(mobileNumber).orElseThrow(
+                () -> new ResourceNotFoundException("Customer", "mobileNumber", mobileNumber));
+        Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
+        CustomerDto customerDto = CustomerMapper.mapToCustomerDto(customer, new CustomerDto());
+        AccountsDto accountsDto = AccountsMapper.mapToAccountsDto(accounts, new AccountsDto());
+
+        AccountDetailsDto accountDetailsDto = new AccountDetailsDto();
+        accountDetailsDto.setCustomerDto(customerDto);
+        accountDetailsDto.setAccountsDto(accountsDto);
+
+        accountDetailsDto.setCardsDto(cardsFeignClient.getCardDetails(mobileNumber));
+
+        return accountDetailsDto;
     }
 
 }

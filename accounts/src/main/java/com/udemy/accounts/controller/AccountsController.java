@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.udemy.accounts.constants.AccountsConstant;
+import com.udemy.accounts.dto.AccountDetailsDto;
 import com.udemy.accounts.dto.AccountsConfigInfoDto;
 import com.udemy.accounts.dto.CustomerDto;
 import com.udemy.accounts.dto.ResponseDto;
@@ -85,6 +86,11 @@ public class AccountsController {
     @GetMapping("/account-info")
     public ResponseEntity<AccountsConfigInfoDto> getAccountInfo() {
         return ResponseEntity.ok(accountsConfigInfoDto);
+    }
+
+    @GetMapping("/account-details/{mobileNumber}")
+    public ResponseEntity<AccountDetailsDto> getAccountDetails(@PathVariable String mobileNumber) {
+        return ResponseEntity.ok(iAccountService.fetchAccountDetails(mobileNumber));
     }
 
 }

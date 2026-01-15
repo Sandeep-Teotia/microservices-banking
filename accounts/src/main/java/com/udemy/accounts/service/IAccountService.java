@@ -1,5 +1,6 @@
 package com.udemy.accounts.service;
 
+import com.udemy.accounts.dto.AccountDetailsDto;
 import com.udemy.accounts.dto.CustomerDto;
 
 public interface IAccountService {
@@ -11,4 +12,6 @@ public interface IAccountService {
     boolean updateAccount(CustomerDto customerDto);
 
     boolean deleteAccount(String mobileNumber);
+
+    AccountDetailsDto fetchAccountDetails(String mobileNumber);
 }

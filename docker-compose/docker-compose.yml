@@ -8,6 +8,7 @@ services:
       - "microservices-net"
     environment:
       SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/config"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
     deploy:
       resources:
         limits:
@@ -24,6 +25,7 @@ services:
       - "microservices-net"
     environment:
       SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/config"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
     deploy:
       resources:
         limits:
@@ -40,6 +42,7 @@ services:
       - "microservices-net"
     environment:
       SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/config"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
     deploy:
       resources:
         limits:
@@ -68,7 +71,7 @@ services:
     image: "sandeepteotia/eurekaserver:1.0"
     container_name: eurekaserver
     ports:
-      - "8761"
+      - "8070:8070"
     networks:
       - "microservices-net"
     healthcheck:
@@ -83,7 +86,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: "250M"          
+          memory: "250M"
+    environment:
+      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/config"
+      EUREKA_INSTANCE_HOSTNAME: "eurekaserver"                
 networks:
   microservices-net:
     driver: bridge        
