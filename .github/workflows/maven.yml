@@ -18,7 +18,7 @@ jobs:
     
     strategy:
       matrix:
-        service: [accounts, cards, loans, configserver]
+        service: [accounts, cards, loans, configserver, eurekaserver]
     
     steps:
     - name: Checkout code
