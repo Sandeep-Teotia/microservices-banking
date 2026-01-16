@@ -11,20 +11,11 @@ eureka:
 spring:
   cloud:
     gateway:
-      mvc:
-        routes:
-          - id: accounts-route
-            uri: lb://ACCOUNTS
-            predicates:
-              - Path=/accounts/**
-          - id: cards-route
-            uri: lb://CARDS
-            predicates:
-              - Path=/cards/**
-          - id: loans-route
-            uri: lb://LOANS
-            predicates:
-              - Path=/loans/**
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
 
 
 management:
@@ -34,5 +25,4 @@ management:
         include: "*"
   endpoint:
     gateway:
-      enabled: true
-   
+      access: unrestricted
