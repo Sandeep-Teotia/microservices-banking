@@ -9,10 +9,22 @@ eureka:
         register-with-eureka: true
 
 spring:
-  gateway:
-    discovery:
-        locator:
-            enabled: true
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          - id: accounts-route
+            uri: lb://ACCOUNTS
+            predicates:
+              - Path=/accounts/**
+          - id: cards-route
+            uri: lb://CARDS
+            predicates:
+              - Path=/cards/**
+          - id: loans-route
+            uri: lb://LOANS
+            predicates:
+              - Path=/loans/**
 
 
 management:
